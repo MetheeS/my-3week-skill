@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From Prompting to Engineering — A 21-Day Story</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,800;9..144,900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a1414;
+    --bg-2:#0e1d1d;
+    --panel:#11272700;
+    --ink:#e8f4f2;
+    --ink-dim:#7fa5a2;
+    --ink-faint:#4d6f6d;
+    --mint:#2af5b0;
+    --teal:#00b4b5;
+    --teal-dk:#0c6e6f;
+    --amber:#ffb74d;
+    --line:#1c3a3a;
+    --rule:#234646;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Fraunces',Georgia,serif;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--mint);color:#04100c}
+
+  /* grain + glow atmosphere */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;
+    background:
+      radial-gradient(680px 460px at 78% 8%, rgba(42,245,176,.10), transparent 60%),
+      radial-gradient(720px 520px at 12% 96%, rgba(0,180,181,.12), transparent 62%);
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:2;opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .mono{font-family:'JetBrains Mono',monospace}
+
+  /* ---- progress rail ---- */
+  #rail{
+    position:fixed;top:0;left:0;height:3px;width:0%;z-index:50;
+    background:linear-gradient(90deg,var(--teal),var(--mint));
+    box-shadow:0 0 14px rgba(42,245,176,.6);
+  }
+
+  /* ---- side nav dots ---- */
+  nav#dots{
+    position:fixed;right:26px;top:50%;transform:translateY(-50%);
+    z-index:40;display:flex;flex-direction:column;gap:14px;
+  }
+  nav#dots a{
+    width:11px;height:11px;border-radius:50%;
+    border:1.5px solid var(--ink-faint);
+    background:transparent;transition:.32s;position:relative;
+  }
+  nav#dots a:hover{border-color:var(--mint)}
+  nav#dots a.on{background:var(--mint);border-color:var(--mint);box-shadow:0 0 10px var(--mint)}
+  nav#dots a span{
+    position:absolute;right:20px;top:50%;transform:translateY(-50%);
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;
+    color:var(--ink-dim);white-space:nowrap;opacity:0;transition:.25s;
+    text-transform:uppercase;pointer-events:none;
+  }
+  nav#dots a:hover span{opacity:1}
+  @media(max-width:780px){nav#dots{display:none}}
+
+  /* ---- layout ---- */
+  section{
+    position:relative;z-index:5;
+    max-width:1080px;margin:0 auto;
+    padding:120px 32px;
+  }
+  @media(max-width:780px){section{padding:84px 22px}}
+
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--mint);margin-bottom:20px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--mint)}
+
+  h2{
+    font-size:clamp(30px,4.6vw,52px);font-weight:800;line-height:1.06;
+    letter-spacing:-.02em;margin-bottom:22px;
+  }
+  h2 em{font-style:italic;color:var(--mint)}
+  .lead{
+    font-size:clamp(17px,1.9vw,21px);line-height:1.66;color:var(--ink-dim);
+    max-width:680px;margin-bottom:46px;
+  }
+  .lead strong{color:var(--ink);font-weight:600}
+
+  /* ---- reveal animation ---- */
+  .rv{opacity:0;transform:translateY(34px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+  .rv.in{opacity:1;transform:none}
+  .rv.d1{transition-delay:.08s}.rv.d2{transition-delay:.16s}
+  .rv.d3{transition-delay:.24s}.rv.d4{transition-delay:.32s}
+  .rv.d5{transition-delay:.40s}.rv.d6{transition-delay:.48s}
+
+  /* ================= HERO ================= */
+  #hero{
+    min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+    max-width:1180px;padding-top:140px;padding-bottom:90px;
+  }
+  .hero-tag{
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--ink-dim);margin-bottom:30px;
+  }
+  .hero-tag b{color:var(--mint);font-weight:500}
+  h1{
+    font-size:clamp(44px,8.2vw,108px);font-weight:900;line-height:.98;
+    letter-spacing:-.035em;margin-bottom:14px;
+  }
+  h1 .l2{display:block;color:var(--mint);font-style:italic;font-weight:800}
+  .hero-sub{
+    font-size:clamp(16px,1.9vw,20px);color:var(--ink-dim);line-height:1.6;
+    max-width:560px;margin:34px 0 44px;
+  }
+  /* the morphing terminal line */
+  .term{
+    font-family:'JetBrains Mono',monospace;font-size:clamp(13px,1.6vw,16px);
+    background:var(--bg-2);border:1px solid var(--line);border-radius:10px;
+    padding:18px 20px;max-width:620px;
+    display:flex;align-items:center;gap:12px;
+  }
+  .term .dot3{display:flex;gap:6px;flex:none}
+  .term .dot3 i{width:9px;height:9px;border-radius:50%;display:block}
+  .term .dot3 i:nth-child(1){background:#ff5f57}
+  .term .dot3 i:nth-child(2){background:#febc2e}
+  .term .dot3 i:nth-child(3){background:#28c840}
+  .term .typed{color:var(--ink);white-space:nowrap;overflow:hidden}
+  .term .cur{display:inline-block;width:9px;height:1.05em;background:var(--mint);
+    vertical-align:-2px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .scroll-cue{
+    margin-top:54px;font-family:'JetBrains Mono',monospace;font-size:11px;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
+    display:flex;align-items:center;gap:10px;
+  }
+  .scroll-cue .arr{
+    width:18px;height:18px;border-right:1.5px solid var(--mint);
+    border-bottom:1.5px solid var(--mint);transform:rotate(45deg);
+    animation:bob 1.7s ease-in-out infinite;
+  }
+  @keyframes bob{0%,100%{transform:rotate(45deg) translate(0,0)}50%{transform:rotate(45deg) translate(4px,4px)}}
+
+  /* ================= STATS ================= */
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  @media(max-width:780px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+  .stat{
+    background:var(--bg-2);border:1px solid var(--line);border-radius:14px;
+    padding:26px 22px;position:relative;overflow:hidden;
+  }
+  .stat::before{
+    content:"";position:absolute;left:0;top:0;width:100%;height:2px;
+    background:linear-gradient(90deg,var(--teal),var(--mint));
+    transform:scaleX(0);transform-origin:left;transition:transform .7s .2s ease;
+  }
+  .stat.in::before{transform:scaleX(1)}
+  .stat .num{
+    font-size:clamp(36px,5vw,56px);font-weight:900;line-height:1;
+    letter-spacing:-.03em;color:var(--mint);
+  }
+  .stat .num .suf{font-size:.5em;color:var(--ink)}
+  .stat .cap{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink-dim);margin-top:12px;line-height:1.5;
+  }
+
+  /* ================= TIMELINE ================= */
+  .tl{position:relative;margin-top:20px;padding-left:38px}
+  .tl::before{
+    content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;
+    background:linear-gradient(180deg,var(--teal-dk),var(--mint),var(--teal-dk));
+  }
+  .tl-item{position:relative;padding-bottom:42px}
+  .tl-item:last-child{padding-bottom:0}
+  .tl-item .node{
+    position:absolute;left:-38px;top:3px;width:18px;height:18px;border-radius:50%;
+    background:var(--bg);border:2px solid var(--mint);
+  }
+  .tl-item .node::after{
+    content:"";position:absolute;inset:3px;border-radius:50%;background:var(--mint);
+    transform:scale(0);transition:transform .5s cubic-bezier(.3,1.5,.5,1);
+  }
+  .tl-item.in .node::after{transform:scale(1)}
+  .tl-week{
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--mint);margin-bottom:6px;
+  }
+  .tl-h{font-size:clamp(20px,2.6vw,26px);font-weight:700;margin-bottom:10px;letter-spacing:-.01em}
+  .tl-p{font-size:15.5px;line-height:1.66;color:var(--ink-dim);max-width:640px}
+  .tl-p .q{color:var(--amber);font-style:italic}
+  .tl-p strong{color:var(--ink);font-weight:600}
+
+  /* ================= PROJECTS ================= */
+  .proj-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  @media(max-width:780px){.proj-grid{grid-template-columns:1fr}}
+  .proj{
+    background:var(--bg-2);border:1px solid var(--line);border-radius:14px;
+    padding:26px 24px;cursor:default;transition:.34s cubic-bezier(.2,.7,.2,1);
+    position:relative;overflow:hidden;
+  }
+  .proj:hover{transform:translateY(-6px);border-color:var(--teal)}
+  .proj:hover .proj-glow{opacity:1}
+  .proj-glow{
+    position:absolute;width:240px;height:240px;border-radius:50%;
+    background:radial-gradient(circle,rgba(42,245,176,.16),transparent 70%);
+    top:-90px;right:-90px;opacity:0;transition:opacity .4s;
+  }
+  .proj .pname{
+    font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;
+    color:var(--mint);letter-spacing:.02em;margin-bottom:4px;
+  }
+  .proj .pkind{font-size:14px;color:var(--ink-dim);margin-bottom:16px;line-height:1.55}
+  .proj .pforce{
+    font-size:13.5px;line-height:1.6;color:var(--ink);
+    border-top:1px solid var(--rule);padding-top:14px;
+  }
+  .proj .pforce b{color:var(--teal);font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:5px}
+
+  /* full-width project for the 5th */
+  .proj.wide{grid-column:1/-1}
+
+  /* ================= SCORECARD ================= */
+  .score-row{
+    display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;
+    padding:18px 0;border-bottom:1px solid var(--rule);
+  }
+  .score-row:last-child{border-bottom:none}
+  .score-name{font-size:16.5px;font-weight:600}
+  .score-ev{font-size:13px;color:var(--ink-dim);margin-top:4px;line-height:1.5;
+    font-family:'JetBrains Mono',monospace;letter-spacing:.01em}
+  .meter{display:flex;gap:5px;align-items:center}
+  .meter i{
+    width:26px;height:9px;border-radius:2px;background:var(--rule);
+    transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.2,.7,.2,1);
+  }
+  .score-row.in .meter i{transform:scaleX(1)}
+  .meter i.f{background:var(--mint)}
+  .meter i.f.amb{background:var(--amber)}
+  .meter i:nth-child(1){transition-delay:.05s}
+  .meter i:nth-child(2){transition-delay:.12s}
+  .meter i:nth-child(3){transition-delay:.19s}
+  .meter i:nth-child(4){transition-delay:.26s}
+  .meter i:nth-child(5){transition-delay:.33s}
+  .badge{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;padding:3px 9px;border-radius:20px;margin-left:14px;
+    flex:none;
+  }
+  .badge.strong{background:rgba(42,245,176,.14);color:var(--mint)}
+  .badge.dev{background:rgba(255,183,77,.14);color:var(--amber)}
+
+  /* ================= DEBUG CASCADE ================= */
+  .cascade{display:flex;flex-direction:column;gap:0}
+  .casc-item{
+    background:var(--bg-2);border:1px solid var(--line);
+    padding:18px 22px;position:relative;
+  }
+  .casc-item:first-child{border-radius:12px 12px 0 0}
+  .casc-item:last-child{border-radius:0 0 12px 12px}
+  .casc-item+.casc-item{border-top:none}
+  .casc-num{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--bg);
+    background:var(--mint);width:24px;height:24px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-weight:700;
+    position:absolute;left:-12px;top:18px;
+  }
+  .casc-item{padding-left:34px}
+  .casc-bug{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:3px}
+  .casc-fix{font-size:13px;color:var(--ink-dim);font-family:'JetBrains Mono',monospace}
+  .casc-fix b{color:var(--teal)}
+  .casc-arrow{
+    text-align:center;color:var(--ink-faint);font-size:18px;line-height:1;
+    padding:3px 0;background:var(--bg-2);border-left:1px solid var(--line);
+    border-right:1px solid var(--line);
+  }
+
+  /* ================= QUOTE ================= */
+  .pull{
+    border-left:3px solid var(--mint);padding:8px 0 8px 30px;margin:8px 0;
+  }
+  .pull .qt{
+    font-size:clamp(22px,3.1vw,34px);font-weight:600;line-height:1.34;
+    letter-spacing:-.015em;
+  }
+  .pull .qt em{color:var(--mint);font-style:italic}
+  .pull .at{
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink-dim);margin-top:20px;
+  }
+
+  /* ================= FOCUS / NEXT ================= */
+  .focus-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:780px){.focus-grid{grid-template-columns:1fr}}
+  .focus{
+    background:var(--bg-2);border:1px solid var(--line);border-radius:13px;
+    padding:24px 22px;border-top:2px solid var(--amber);
+  }
+  .focus .fnum{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber);
+    letter-spacing:.12em;margin-bottom:8px;
+  }
+  .focus .fh{font-size:17px;font-weight:700;margin-bottom:9px;line-height:1.3}
+  .focus .fp{font-size:13.5px;line-height:1.62;color:var(--ink-dim)}
+  .focus .fp b{color:var(--mint);font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;letter-spacing:.08em;text-transform:uppercase}
+
+  /* ================= ROADMAP ================= */
+  .road{display:flex;flex-direction:column;gap:14px}
+  .road-item{
+    display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;
+    background:var(--bg-2);border:1px solid var(--line);border-radius:13px;
+    padding:22px 24px;transition:.3s;
+  }
+  .road-item:hover{border-color:var(--mint);transform:translateX(6px)}
+  .road-when{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--bg);background:var(--mint);
+    padding:5px 11px;border-radius:6px;font-weight:700;white-space:nowrap;
+  }
+  .road-body .rh{font-size:16px;font-weight:600;margin-bottom:5px}
+  .road-body .rp{font-size:13.5px;color:var(--ink-dim);line-height:1.55}
+
+  /* ================= VERDICT ================= */
+  #verdict{text-align:center;max-width:880px}
+  .verdict-line{
+    font-size:clamp(24px,3.4vw,40px);font-weight:700;line-height:1.32;
+    letter-spacing:-.018em;margin-bottom:28px;
+  }
+  .verdict-line em{color:var(--mint);font-style:italic}
+  .verdict-label{
+    display:inline-block;font-family:'JetBrains Mono',monospace;font-size:13px;
+    letter-spacing:.12em;text-transform:uppercase;
+    border:1px solid var(--mint);color:var(--mint);
+    padding:12px 22px;border-radius:30px;margin-top:10px;
+  }
+  .footer{
+    margin-top:80px;padding-top:30px;border-top:1px solid var(--rule);
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;
+    color:var(--ink-faint);line-height:1.8;letter-spacing:.03em;
+  }
+</style>
+</head>
+<body>
+
+<div id="rail"></div>
+
+<nav id="dots">
+  <a href="#hero" data-s="hero" class="on"><span>Start</span></a>
+  <a href="#scale" data-s="scale"><span>The numbers</span></a>
+  <a href="#arc" data-s="arc"><span>The arc</span></a>
+  <a href="#built" data-s="built"><span>What shipped</span></a>
+  <a href="#score" data-s="score"><span>Scorecard</span></a>
+  <a href="#debug" data-s="debug"><span>Debugging</span></a>
+  <a href="#steer" data-s="steer"><span>Steering</span></a>
+  <a href="#focus" data-s="focus"><span>What's next</span></a>
+  <a href="#verdict" data-s="verdict"><span>Verdict</span></a>
+</nav>
+
+<!-- ================= HERO ================= -->
+<section id="hero">
+  <div class="hero-tag rv">SKILL DEVELOPMENT ANALYSIS &nbsp;/&nbsp; <b>Methee Srisupundit · Siam Kubota</b> &nbsp;/&nbsp; 18–26 May 2026</div>
+  <h1 class="rv d1">From Prompting<span class="l2">to Engineering.</span></h1>
+  <p class="hero-sub rv d2">Twenty-one days. Five production systems. A learning curve steep enough to be the story itself — reconstructed from five project histories and the full chat record.</p>
+  <div class="term rv d3">
+    <div class="dot3"><i></i><i></i><i></i></div>
+    <div class="typed mono"><span id="typed"></span><span class="cur"></span></div>
+  </div>
+  <div class="scroll-cue rv d4">Scroll to follow the trajectory <span class="arr"></span></div>
+</section>
+
+<!-- ================= SCALE ================= -->
+<section id="scale">
+  <div class="eyebrow rv">01 — The numbers</div>
+  <h2 class="rv d1">Three weeks, <em>by the count.</em></h2>
+  <p class="lead rv d2">Each figure below is pulled straight from the project histories. Together they describe a pace that is, frankly, not normal.</p>
+  <div class="stat-grid">
+    <div class="stat rv d1"><div class="num" data-to="5">0</div><div class="cap">Production systems shipped</div></div>
+    <div class="stat rv d2"><div class="num" data-to="21">0</div><div class="cap">Days, start to finish</div></div>
+    <div class="stat rv d3"><div class="num" data-to="36"><span class="suf">+</span></div><div class="cap">Sessions on the flagship build</div></div>
+    <div class="stat rv d4"><div class="num" data-to="598">0</div><div class="cap">Cost findings in one pipeline</div></div>
+  </div>
+</section>
+
+<!-- ================= ARC ================= -->
+<section id="arc">
+  <div class="eyebrow rv">02 — The arc</div>
+  <h2 class="rv d1">A curve you can <em>watch bend.</em></h2>
+  <p class="lead rv d2">The chat record, read in date order, shows the shift week by week — orientation, to first builds, to system design, to operations and reflection.</p>
+  <div class="tl">
+    <div class="tl-item rv">
+      <div class="node"></div>
+      <div class="tl-week">Week 1 · 18–20 May</div>
+      <div class="tl-h">Learning the instrument</div>
+      <div class="tl-p">The earliest sessions are tool-orientation questions — <span class="q">"are there Claude design plugins?"</span>, <span class="q">"how do I install a skill?"</span> Deliberately mapping the capability surface before committing. Short and purposeful.</div>
+    </div>
+    <div class="tl-item rv">
+      <div class="node"></div>
+      <div class="tl-week">Week 1–2 · 19–21 May</div>
+      <div class="tl-h">First builds, first hard debugging</div>
+      <div class="tl-p">The MCP server and data-warehouse sessions show sustained multi-step debugging — five layered failures resolved in turn. First sign of the defining pattern: <strong>treating a failure as a layer to peel, not a wall to stop at.</strong></div>
+    </div>
+    <div class="tl-item rv">
+      <div class="node"></div>
+      <div class="tl-week">Week 2 · 20–21 May</div>
+      <div class="tl-h">Designing systems, not asking how-tos</div>
+      <div class="tl-p">Multi-channel agent architecture. Distributed queue-worker scaling. Using <strong>grill-me</strong> to have your own plan attacked before writing code. Most people defend their plans — you went looking for the holes.</div>
+    </div>
+    <div class="tl-item rv">
+      <div class="node"></div>
+      <div class="tl-week">Week 3 · to 26 May</div>
+      <div class="tl-h">Operating, refining, reflecting</div>
+      <div class="tl-p">170+ dates backfilled. OpenAI capacity scaled <strong>down</strong> on real load data. Azure SQL deleted only after the replacement proved stable. And you commissioned this analysis — closing the loop on purpose.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= BUILT ================= -->
+<section id="built">
+  <div class="eyebrow rv">03 — What shipped</div>
+  <h2 class="rv d1">Five systems. <em>No two alike.</em></h2>
+  <p class="lead rv d2">The breadth is the point — cloud, backend, frontend, data, and AI tooling. Every one of them reached live and stable.</p>
+  <div class="proj-grid">
+    <div class="proj rv d1"><div class="proj-glow"></div>
+      <div class="pname">i-facebook</div>
+      <div class="pkind">Daily-batch analytics pipeline: Graph API → Azure Functions → Azure OpenAI → FastAPI → Next.js SPA. The flagship, 36+ sessions.</div>
+      <div class="pforce"><b>Forced</b>Full-vertical systems engineering plus two large architecture reversals.</div>
+    </div>
+    <div class="proj rv d2"><div class="proj-glow"></div>
+      <div class="pname">azure-costdown</div>
+      <div class="pkind">Evidence-based cost-optimization pipeline: 16 phases, 9 waste dimensions, $12.8k/mo of savings found on a $93k/mo subscription.</div>
+      <div class="pforce"><b>Forced</b>Layered debugging, FinOps modelling, management-grade reporting.</div>
+    </div>
+    <div class="proj rv d3"><div class="proj-glow"></div>
+      <div class="pname">AI Photo Booth</div>
+      <div class="pkind">Async photo booth: kiosk → FastAPI + asyncio queue → Gemini compositing → Container Apps. The strongest test strategy of the five.</div>
+      <div class="pforce"><b>Forced</b>Async Python correctness, a real three-layer test suite, CI/CD.</div>
+    </div>
+    <div class="proj rv d4"><div class="proj-glow"></div>
+      <div class="pname">Canteen Menu</div>
+      <div class="pkind">Internal lunch-menu tool: React/Vite admin + FastAPI + Jinja2 static display + Azure OpenAI image-gen & translation. Multi-site, role-scoped.</div>
+      <div class="pforce"><b>Forced</b>Spec-first methodology, SWA auth model, AI-into-UX integration.</div>
+    </div>
+    <div class="proj wide rv d5"><div class="proj-glow"></div>
+      <div class="pname">skc-dwh MCP server</div>
+      <div class="pkind">A custom MCP bundle connecting Claude Desktop to the Azure SQL data warehouse — Entra ID MFA, AST-validated SELECT-only safety, packaged as a double-click install for a non-technical user.</div>
+      <div class="pforce"><b>Forced</b>Building — not just using — AI tooling; OAuth token flows for non-HTTP services.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SCORECARD ================= -->
+<section id="score">
+  <div class="eyebrow rv">04 — Scorecard</div>
+  <h2 class="rv d1">Scored against a <em>senior</em>, not a beginner.</h2>
+  <p class="lead rv d2">Five bars filled means it's genuinely a strength to lean on. Amber means the habit is forming but not yet a default.</p>
+  <div class="rv d3">
+    <div class="score-row">
+      <div><div class="score-name">Spec-first / planning discipline</div><div class="score-ev">RESEARCH.md before code · prototype before React</div></div>
+      <div style="display:flex;align-items:center">
+        <div class="meter"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></div>
+        <span class="badge strong">Strong</span></div>
+    </div>
+    <div class="score-row">
+      <div><div class="score-name">Debugging &amp; root-cause analysis</div><div class="score-ev">4-layer Azure CLI bug cascade traced methodically</div></div>
+      <div style="display:flex;align-items:center">
+        <div class="meter"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></div>
+        <span class="badge strong">Strong</span></div>
+    </div>
+    <div class="score-row">
+      <div><div class="score-name">Architecture judgement</div><div class="score-ev">SQL→Blob &amp; full-stack→split refactors, each with a trigger</div></div>
+      <div style="display:flex;align-items:center">
+        <div class="meter"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></div>
+        <span class="badge strong">Strong</span></div>
+    </div>
+    <div class="score-row">
+      <div><div class="score-name">Directing the AI</div><div class="score-ev">"Just use simple query" · caught 5 errors in the sprint plan</div></div>
+      <div style="display:flex;align-items:center">
+        <div class="meter"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></div>
+        <span class="badge strong">Strong</span></div>
+    </div>
+    <div class="score-row">
+      <div><div class="score-name">Breadth across the stack</div><div class="score-ev">Cloud · backend · frontend · auth · data · AI — all live</div></div>
+      <div style="display:flex;align-items:center">
+        <div class="meter"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></div>
+        <span class="badge strong">Strong</span></div>
+    </div>
+    <div class="score-row">
+      <div><div class="score-name">Verification before trust</div><div class="score-ev">Applied after pain, not before — habit still forming</div></div>
+      <div style="display:flex;align-items:center">
+        <div class="meter"><i class="f amb"></i><i class="f amb"></i><i class="f amb"></i><i></i><i></i></div>
+        <span class="badge dev">Developing</span></div>
+    </div>
+    <div class="score-row">
+      <div><div class="score-name">Testing &amp; automation rigour</div><div class="score-ev">Strong on Photo Booth · explicitly absent elsewhere</div></div>
+      <div style="display:flex;align-items:center">
+        <div class="meter"><i class="f amb"></i><i class="f amb"></i><i></i><i></i><i></i></div>
+        <span class="badge dev">Emerging</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DEBUG CASCADE ================= -->
+<section id="debug">
+  <div class="eyebrow rv">05 — Debugging in depth</div>
+  <h2 class="rv d1">One symptom. <em>Four bugs.</em></h2>
+  <p class="lead rv d2">The azure-costdown history's clearest exhibit: a single wrong resource count unfolded into four distinct bugs, fixed in sequence — each fix exposing the next.</p>
+  <div class="cascade rv d3">
+    <div class="casc-item"><div class="casc-num">1</div>
+      <div class="casc-bug">Multi-line KQL through <span class="mono">cmd.exe</span> dropped a flag</div>
+      <div class="casc-fix">FIX → <b>flatten the query to a single line</b></div>
+    </div>
+    <div class="casc-arrow">↓</div>
+    <div class="casc-item"><div class="casc-num">2</div>
+      <div class="casc-bug">Nested double quotes broke shell parsing</div>
+      <div class="casc-fix">FIX → <b>swap KQL literals to single quotes</b></div>
+    </div>
+    <div class="casc-arrow">↓</div>
+    <div class="casc-item"><div class="casc-num">3</div>
+      <div class="casc-bug">CLI returned snake_case keys, not the API's camelCase</div>
+      <div class="casc-fix">FIX → <b>tolerate both naming conventions</b></div>
+    </div>
+    <div class="casc-arrow">↓</div>
+    <div class="casc-item"><div class="casc-num">4</div>
+      <div class="casc-bug">nextLink pagination needed the full body every POST</div>
+      <div class="casc-fix">FIX → <b>stop assuming GET-state-encoding</b></div>
+    </div>
+  </div>
+  <p class="lead rv d4" style="margin-top:34px;margin-bottom:0">What makes this senior-level isn't that the bugs were found. It's that you <strong>ran the CLI manually, outside Python, to inspect the real output shape</strong> before editing code — moving from "fix the code" to "fix my model of how the system behaves."</p>
+</section>
+
+<!-- ================= STEER ================= -->
+<section id="steer">
+  <div class="eyebrow rv">06 — Steering the tool</div>
+  <h2 class="rv d1">The skill that <em>separates the rest.</em></h2>
+  <p class="lead rv d2">Three moments from the record where you didn't follow the AI — you directed it.</p>
+  <div class="proj-grid rv d3" style="margin-bottom:46px">
+    <div class="proj"><div class="proj-glow"></div>
+      <div class="pname">override</div>
+      <div class="pkind">When Claude built elaborate join workarounds against the warehouse, you cut it off: <span style="color:var(--amber);font-style:italic">"just use simple query."</span> You recognised over-engineering and were right.</div>
+    </div>
+    <div class="proj"><div class="proj-glow"></div>
+      <div class="pname">audit</div>
+      <div class="pkind">The i-facebook Phase 0 research caught <span style="color:var(--ink)">five technical errors</span> in Claude's own sprint plan — before any of them reached code.</div>
+    </div>
+  </div>
+  <div class="pull rv d4">
+    <div class="qt">"<em>Question the model</em>" — look at the actual SDK source, the actual error, the actual runtime, rather than trusting a confident-sounding answer.</div>
+    <div class="at">— a standing habit, named in your own i-facebook history. Keep it. It's your single most valuable working habit.</div>
+  </div>
+</section>
+
+<!-- ================= FOCUS ================= -->
+<section id="focus">
+  <div class="eyebrow rv">07 — What's next</div>
+  <h2 class="rv d1">Honest gaps — <em>none of them serious.</em></h2>
+  <p class="lead rv d2">Every item here is a <strong>consistency</strong> problem, not a <strong>capability</strong> one. You've already shown each missing habit at least once.</p>
+  <div class="focus-grid">
+    <div class="focus rv d1">
+      <div class="fnum">GAP 01</div>
+      <div class="fh">Verification is reactive</div>
+      <div class="fp">A wrong assumption causes a bug, the bug costs time, <i>then</i> the habit is adopted. <b>Action —</b> inspect the real data shape before writing the code that consumes it. Make it a checklist step, not a re-learned lesson.</div>
+    </div>
+    <div class="focus rv d2">
+      <div class="fnum">GAP 02</div>
+      <div class="fh">Testing rigour is uneven</div>
+      <div class="fp">Photo Booth has a real three-layer suite; Canteen explicitly has none. <b>Action —</b> make the Photo Booth approach your baseline and carry it into the next project from day one.</div>
+    </div>
+    <div class="focus rv d3">
+      <div class="fnum">GAP 03</div>
+      <div class="fh">The same bug class recurs</div>
+      <div class="fp">Windows→Linux path and encoding issues appear in three projects, each codified per-repo. <b>Action —</b> keep one cross-project gotchas file or reusable skill. You're 80% there.</div>
+    </div>
+    <div class="focus rv d4">
+      <div class="fnum">GAP 04</div>
+      <div class="fh">Operational loose ends</div>
+      <div class="fp">A documented maxReplicas drift; an unfinished polling path. <b>Action —</b> when a history says "known issue," ticket it. Written-but-untracked tends to stay unfixed.</div>
+    </div>
+  </div>
+
+  <div style="margin-top:54px" class="rv d2">
+    <div class="eyebrow" style="margin-bottom:24px">The 3-week roadmap</div>
+    <div class="road">
+      <div class="road-item">
+        <div class="road-when">Next project</div>
+        <div class="road-body"><div class="rh">Tests first, Photo-Booth style</div><div class="rp">Inspect every external data shape before consuming it — converts your two weakest habits into defaults while they're fresh.</div></div>
+      </div>
+      <div class="road-item">
+        <div class="road-when">Next 2 weeks</div>
+        <div class="road-body"><div class="rh">One cross-project gotchas skill</div><div class="rp">Ticket every open "known issue." Stops the same bug class and the same loose ends recurring.</div></div>
+      </div>
+      <div class="road-item">
+        <div class="road-when">Next 3 weeks</div>
+        <div class="road-body"><div class="rh">Add real observability to one project</div><div class="rp">Alerting, not just logs. Operations is the one part of the vertical stack still thinner than the rest.</div></div>
+      </div>
+      <div class="road-item">
+        <div class="road-when">Ongoing</div>
+        <div class="road-body"><div class="rh">Keep questioning the model</div><div class="rp">Keep an ISSUE.md live during builds. Protect the habit that already makes you effective.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= VERDICT ================= -->
+<section id="verdict">
+  <div class="eyebrow rv" style="justify-content:center">08 — Verdict</div>
+  <div class="verdict-line rv d1">You don't follow the tool. You <em>direct</em> it. You catch its mistakes, make architecture calls it wouldn't, and reverse them when reality disagrees — and you ship, repeatedly, across domains.</div>
+  <div class="rv d2"><div class="verdict-label">Senior IC · AI-assisted engineering</div></div>
+  <div class="verdict-line rv d3" style="margin-top:46px;font-size:clamp(18px,2.4vw,26px);color:var(--ink-dim)">In 21 days you built five live systems and learned to treat a powerful AI as an instrument you play — not an oracle you obey. The skill is real. The next move is simply making your best self the <em>default</em> self.</div>
+  <div class="footer rv d4">
+    SKILL DEVELOPMENT ANALYSIS · METHEE SRISUPUNDIT · SIAM KUBOTA<br>
+    Compiled 26 May 2026 from five project histories — i-facebook, azure-costdown,<br>
+    image-gen, canteen-menu, skc-dwh — and the 18–26 May chat record.
+  </div>
+</section>
+
+<script>
+  /* ---- progress rail ---- */
+  const rail=document.getElementById('rail');
+  function onScroll(){
+    const h=document.documentElement.scrollHeight-window.innerHeight;
+    rail.style.width=(window.scrollY/h*100)+'%';
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+
+  /* ---- reveal on view ---- */
+  const io=new IntersectionObserver((es)=>{
+    es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
+  },{threshold:.16});
+  document.querySelectorAll('.rv,.stat,.tl-item,.score-row').forEach(el=>io.observe(el));
+
+  /* ---- count-up stats ---- */
+  const cio=new IntersectionObserver((es)=>{
+    es.forEach(e=>{
+      if(!e.isIntersecting)return;
+      const el=e.target,to=+el.dataset.to,suf=el.querySelector('.suf');
+      let st=null,dur=1300;
+      function step(ts){
+        if(!st)st=ts;
+        const p=Math.min((ts-st)/dur,1);
+        const ease=1-Math.pow(1-p,3);
+        el.firstChild.textContent=Math.round(to*ease);
+        if(suf)el.appendChild(suf);
+        if(p<1)requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+      cio.unobserve(el);
+    });
+  },{threshold:.6});
+  document.querySelectorAll('.num[data-to]').forEach(el=>cio.observe(el));
+
+  /* ---- hero terminal type loop ---- */
+  const lines=[
+    'how do I install a skill in claude chat?',
+    'build a custom MCP server with Entra ID MFA...',
+    'just use a simple query — no joins.',
+    'reversing the architecture: SQL \u2192 Blob storage.',
+    'i caught 5 errors in the plan before they hit code.'
+  ];
+  const out=document.getElementById('typed');
+  let li=0,ci=0,del=false;
+  function loop(){
+    const cur=lines[li];
+    out.textContent=cur.slice(0,ci);
+    if(!del){
+      ci++;
+      if(ci>cur.length){del=true;return setTimeout(loop,1500);}
+      return setTimeout(loop,42);
+    }else{
+      ci--;
+      if(ci<0){del=false;li=(li+1)%lines.length;ci=0;return setTimeout(loop,260);}
+      return setTimeout(loop,20);
+    }
+  }
+  loop();
+
+  /* ---- nav dots active state ---- */
+  const dots=[...document.querySelectorAll('#dots a')];
+  const secs=dots.map(d=>document.getElementById(d.dataset.s));
+  const nio=new IntersectionObserver((es)=>{
+    es.forEach(e=>{
+      if(e.isIntersecting){
+        dots.forEach(d=>d.classList.remove('on'));
+        const d=dots.find(x=>x.dataset.s===e.target.id);
+        if(d)d.classList.add('on');
+      }
+    });
+  },{threshold:.5});
+  secs.forEach(s=>s&&nio.observe(s));
+
+  /* ---- project glow follows cursor ---- */
+  document.querySelectorAll('.proj').forEach(p=>{
+    const g=p.querySelector('.proj-glow');
+    p.addEventListener('mousemove',ev=>{
+      const r=p.getBoundingClientRect();
+      g.style.left=(ev.clientX-r.left-120)+'px';
+      g.style.top=(ev.clientY-r.top-120)+'px';
+    });
+  });
+</script>
+</body>
+</html>
